@@ -13,21 +13,31 @@
 	<svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
 
 	<script>
+
+
+
+
 	function Circle(cx, cy, r, html_id)
 	{
 		var html_id = html_id;
 		this.info = { cx: cx,  cy: cy, r: r };
-		
+
+		this.getId=function(){
+			return html_id;
+		}
 		//private function that generates a random number
 		var randomNumberBetween = function(min, max){
 			return Math.random()*(max-min) + min;
+		}
+		var randomColor=function(){
+			return "#"+Math.floor(Math.random()*999999);
 		}
 
 		this.initialize = function(){
 			//give a random velocity for the circle
 			this.info.velocity = {
-				x: randomNumberBetween(-3,3),
-				y: randomNumberBetween(-3,3)
+				x: randomNumberBetween(-5,5),
+				y: randomNumberBetween(-5,5)
 			}
 
 			//create a circle 
@@ -36,7 +46,7 @@
 				  	cy: this.info.cy,
 				  	r:  this.info.r,
 				  	id: html_id,
-				  	style: "fill: black"
+				  	style: "fill:"+randomColor()
 				});
 			var svgEl=document.getElementById('svg');
 			svgEl.style.width=document.body.clientWidth;
@@ -57,6 +67,8 @@
 				this.info.velocity.y = this.info.velocity.y * -1;
 			}
 
+
+
 			this.info.cx = this.info.cx + this.info.velocity.x*time;
 			this.info.cy = this.info.cy + this.info.velocity.y*time;
 
@@ -64,23 +76,137 @@
 			el.setAttribute("cy", this.info.cy);
 		}
 
+
+
 		//creates the SVG element and returns it
 		var makeSVG = function(tag, attrs) {
+			// console.log("made svg");
 	        var el= document.createElementNS('http://www.w3.org/2000/svg', tag);
-	        for (var k in attrs)
-	        {
-	            el.setAttribute(k, attrs[k]);
-	        }
+	        // if(el){
+		        for (var k in attrs)
+		        {
+		            el.setAttribute(k, attrs[k]);
+		        }
+		    // }
 	        return el;
 	    }
 
 	    this.initialize();
 	}
 
+	function detectCollision(circles){
+			for(circle in circles){
+				// console.log(circle);
+				// console.log(circles.length);
+				for(circle2 in circles){
+					if(circle!=circle2){
+
+						outerX=circles[circle].info.cx;
+						innerX=circles[circle2].info.cx;
+						// outerX=circle.info.cx;
+						// innerX=circle2.info.cx;
+						// console.log(outerX-innerX);
+
+						outerY=circles[circle].info.cy;
+						innerY=circles[circle2].info.cy;
+						radSum=circles[circle].info.r+circles[circle2].info.r;
+						// console.log(radSum);
+						// console.log(Math.abs(outerX-innerX));
+						if(Math.abs(outerX-innerX)<radSum&&Math.abs(outerY-innerY)<radSum){
+						// if(outerX==innerX){
+							// circles[circle].info.cx=0;
+							// circles[circle2].info.cx=0;
+							
+							// circles.splice(circles.indexOf(circle),1);
+							// circles.splice(circles.indexOf(circle2),1);
+							// circles.splice(circle,1);
+							// circles.splice(circle2,1);
+
+							
+							circleX=circles[circle].info.velocity.x;
+							circle2X=circles[circle2].info.velocity.x;
+							circleY=circles[circle].info.velocity.y;
+							circle2Y=circles[circle2].info.velocity.y;
+
+							circleR=circles[circle].info.r;
+							circle2R=circles[circle2].info.r;
+							if(circleR>circle2R){
+								newX=outerX;
+								newY=outerY;
+							}
+							else if(circleR<circle2R){
+								newX=innerX;
+								newY=innerY;
+							}
+							else{
+								newX=(innerX+outerX)/2;
+								newY=(innerY+outerY)/2;
+							}
+
+							//if new circ or its edges would end up ouside the window
+							if(parseInt(radSum)*2>parseInt(document.body.clientHeight)){
+								radSum=document.body.clientHeight/2-10;
+								console.log(radSum);
+
+							}
+							
+							if( newX+radSum > document.body.clientWidth)	
+							{
+								newX-=radSum;
+							}
+							if(newX < radSum){
+								newX=radSum;
+							}
+							if( newY+radSum > document.body.clientHeight)
+							{
+								newY-=radSum;
+							}
+							if(newY < radSum){
+								newY=radSum;
+							}
+							dh=document.body.clientHeight;
+							console.log(dh);
+							console.log(radSum);
+
+							
+							var elem=document.getElementById(circles[circle].getId());
+							elem.remove();
+							var elem2=document.getElementById(circles[circle2].getId());
+							elem2.remove();
+							delete circles[circle];
+							delete circles[circle2];
+
+							var newCircle=playground.createNewCircle(newX,newY,radSum);
+							// newCircle.info.velocity.x=(circle.info.velocity.x*circle.info.r+circle2.info.velocity.x*circle2.info.r);
+							// newCircle.info.velocity.y=(circle.info.velocity.y*circle.info.r+circle2.info.velocity.y*circle2.info.r);
+							circles[circles.length-1].info.velocity.x=(circleX*circleR+circle2X*circle2R)/radSum;
+							circles[circles.length-1].info.velocity.y=(circleY*circleR+circle2Y*circle2R)/radSum;
+							// balloon(circles[circles.length-1],100);
+							break;
+
+
+							// console.log(circles[circle].info.html_id);
+						}
+					}
+				}
+			}
+		}
+
+	// function balloon(circle,r){
+	// 		setInterval(increaseR(circle,r),250);
+		
+	// }
+	// function increaseR(circle,r){
+	// 	while(circle.info.r<r){
+	// 		console.log("incR");
+	// 		circle.info.r++;
+	// 	}
+	// }
+
 	function PlayGround()
 	{
 		var counter = 0;  //counts the number of circles created
-		var circles = [ ]; //array that will hold all the circles created in the app
+		var circles = []; //array that will hold all the circles created in the app
 
 		//a loop that updates the circle's position on the screen
 		this.loop = function(){
@@ -88,6 +214,7 @@
 			{
 				circles[circle].update(1);
 			}
+			detectCollision(circles);
 		}
 
 		this.createNewCircle = function(x,y,r){
@@ -101,12 +228,11 @@
 	}
 
 	var playground = new PlayGround();
-	setInterval(playground.loop, 15);
+	setInterval(playground.loop, 25);
 
 	// document.onclick = function(e) {
 	// 	playground.createNewCircle(e.x,e.y,10);
 	// }
-	// document.onmousedown=function(e)
 
 	(function(){
 		var mousedown_time;
@@ -120,7 +246,24 @@
 		}
 		document.onmouseup=function(e){
 			time_pressed=getTime()-mousedown_time;
-			playground.createNewCircle(e.x,e.y,time_pressed/20);
+			r=time_pressed/20;
+			x=e.x;
+			y=e.y;
+			if( x+r > document.body.clientWidth)	
+							{
+								x-=r;
+							}
+							if(x < r){
+								x=r;
+							}
+							if( y+r > document.body.clientHeight)
+							{
+								y-=r;
+							}
+							if(y < r){
+								y=r;
+							}
+			playground.createNewCircle(x,y,r);
 		}
 	})();
 	
